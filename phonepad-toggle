@@ -1,0 +1,95 @@
+#!/usr/bin/env python3
+"""Control phonepad: flip capture, check state, or type the clipboard
+into the phone.
+
+  phonepad-toggle            toggle capture
+  phonepad-toggle on|off     force a direction
+  phonepad-toggle status     report without changing anything
+  phonepad-toggle test       send a harmless keystroke
+  phonepad-toggle paste      type the laptop clipboard into the phone
+"""
+
+import base64
+import os
+import socket
+import subprocess
+import sys
+
+SOCKET = "/run/phonepad.sock"
+PASTE_LIMIT = 4096
+
+
+def notify(title, body, icon):
+    if not os.environ.get("DISPLAY") and not os.environ.get("WAYLAND_DISPLAY"):
+        return
+    subprocess.run(["notify-send", "-a", "Phonepad", "-i", icon,
+                    "-h", "string:x-canonical-private-synchronous:phonepad",
+                    title, body],
+                   stderr=subprocess.DEVNULL, check=False)
+
+
+def read_clipboard():
+    try:
+        out = subprocess.run(["wl-paste", "--no-newline", "--type", "text"],
+                             capture_output=True, check=False, timeout=5)
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    if out.returncode != 0:
+        return None
+    return out.stdout.decode("utf-8", "replace")
+
+
+def main():
+    cmd = sys.argv[1] if len(sys.argv) > 1 else "toggle"
+    payload = cmd
+    clip_len = 0
+
+    if cmd == "paste":
+        text = read_clipboard()
+        if not text:
+            print("clipboard is empty or unreadable", file=sys.stderr)
+            notify("Phonepad", "Clipboard is empty", "dialog-warning")
+            return 1
+        clip_len = len(text)
+        payload = "paste " + base64.b64encode(
+            text[:PASTE_LIMIT].encode("utf-8")).decode("ascii")
+
+    try:
+        s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        s.settimeout(5)
+        s.connect(SOCKET)
+    except OSError as e:
+        msg = "phonepad is not running (%s)" % e.strerror
+        print(msg, file=sys.stderr)
+        notify("Phonepad", msg, "dialog-error")
+        return 1
+
+    s.sendall((payload + "\n").encode("utf-8"))
+    try:
+        reply = s.recv(64).decode().strip().split()
+    except OSError:
+        reply = []
+    s.close()
+
+    state = reply[0] if reply else "?"
+    link = reply[1] if len(reply) > 1 else "?"
+    print("capture %s, host %s" % (state, link))
+
+    if link != "connected":
+        notify("Phonepad", "No phone connected", "dialog-warning")
+    elif cmd == "paste":
+        shown = min(clip_len, PASTE_LIMIT)
+        notify("Phonepad", "Typing %d characters into the phone%s"
+               % (shown, " (truncated)" if clip_len > PASTE_LIMIT else ""),
+               "edit-paste")
+    elif cmd == "test":
+        notify("Phonepad", "Sent a test keystroke", "input-keyboard")
+    elif state == "on":
+        notify("Phonepad", "Keyboard → phone", "input-keyboard")
+    else:
+        notify("Phonepad", "Keyboard → laptop", "computer")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

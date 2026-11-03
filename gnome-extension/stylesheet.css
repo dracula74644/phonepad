@@ -1,0 +1,50 @@
+/* A switch drawn from St primitives, so it does not depend on any shell
+ * internal widget. The track aligns its knob left or right to show state. */
+
+.phonepad-box {
+    spacing: 6px;
+}
+
+.phonepad-track {
+    width: 32px;
+    height: 16px;
+    border-radius: 8px;
+    background-color: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    transition-duration: 150ms;
+}
+
+.phonepad-track.phonepad-on {
+    background-color: #3584e4;
+    border: 1px solid #3584e4;
+}
+
+.phonepad-track.phonepad-unavailable {
+    background-color: rgba(255, 255, 255, 0.07);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+/* margin-left is set inline by the extension to slide the knob; the other
+ * sides stay here. Longhand, so the inline override cannot be fought by a
+ * shorthand declaration. */
+.phonepad-knob {
+    width: 12px;
+    height: 12px;
+    border-radius: 6px;
+    margin-top: 2px;
+    margin-bottom: 2px;
+    margin-right: 2px;
+    background-color: #ffffff;
+    transition-duration: 150ms;
+}
+
+.phonepad-track.phonepad-unavailable .phonepad-knob {
+    background-color: rgba(255, 255, 255, 0.35);
+}
+
+/* Light theme: the panel is dark in both, but keep the off-state readable
+ * if a user theme lightens it. */
+.phonepad-track.phonepad-light {
+    background-color: rgba(0, 0, 0, 0.22);
+    border: 1px solid rgba(0, 0, 0, 0.12);
+}

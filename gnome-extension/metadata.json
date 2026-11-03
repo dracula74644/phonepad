@@ -1,0 +1,8 @@
+{
+  "uuid": "phonepad@local",
+  "name": "Phonepad",
+  "description": "Top bar toggle that swings this laptop's keyboard between the laptop and the paired phone.",
+  "shell-version": ["45", "46", "47", "48", "49", "50", "51"],
+  "version": 1,
+  "settings-schema": null
+}
