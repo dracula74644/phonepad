@@ -118,8 +118,8 @@ ExecStart=
 ExecStart=/usr/lib/bluetooth/bluetoothd -P input
 EOF
 
-# Advertise as a combo keyboard + pointing device so the phone offers to
-# pair with us as a keyboard: 0x002540 = peripheral / keyboard.
+# Advertise as a peripheral keyboard so the phone offers to pair with us as
+# a keyboard rather than as a laptop: 0x002540 = peripheral / keyboard.
 if [[ ! -f "$MAINCONF.phonepad-backup" ]]; then
     cp "$MAINCONF" "$MAINCONF.phonepad-backup"
 fi
